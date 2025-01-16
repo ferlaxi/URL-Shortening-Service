@@ -8,10 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/shorten")
+@RequestMapping("api/shorten")
 public class UrlController {
 
     @Autowired
@@ -21,6 +22,11 @@ public class UrlController {
     public ResponseEntity<UrlDTO> createUrl (@RequestBody Url url) {
         Optional<UrlDTO> newUrl = iUrlService.save(url);
         return newUrl.map(urlDTO -> new ResponseEntity<>(urlDTO, HttpStatus.CREATED)).orElseGet(() -> new ResponseEntity<>(newUrl.get(), HttpStatus.BAD_REQUEST));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UrlDTO>> getAllUrls () {
+        return new ResponseEntity<>(iUrlService.findAll(), HttpStatus.OK);
     }
 
     @GetMapping("/{shortcode}")

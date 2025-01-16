@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -35,6 +36,18 @@ public class UrlService implements IUrlService {
         iUrlRepository.save(newUrl);
 
         return this.findByShortCode(newUrl.getShortCode());
+    }
+
+    @Override
+    public List<UrlDTO> findAll() {
+        List<Url> urlList = iUrlRepository.findAll();
+        List<UrlDTO> urlDTOS = new ArrayList<>();
+
+        for (Url url : urlList) {
+            urlDTOS.add(new UrlDTO(url.getId(), url.getUrl(), url.getShortCode(), url.getCreatedAt(), url.getUpdatedAt()));
+        }
+
+        return urlDTOS;
     }
 
     @Override
