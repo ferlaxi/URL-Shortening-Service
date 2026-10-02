@@ -40,7 +40,6 @@ public class UrlService implements IUrlService {
 
     @Override
     public List<UrlDTO> findAll() {
-
         List<Url> urlList = iUrlRepository.findAll();
         List<UrlDTO> urlDTOS = new ArrayList<>();
 
@@ -54,39 +53,40 @@ public class UrlService implements IUrlService {
     @Override
     public Optional<UrlDTO> findByShortCode(String shortcode) {
         Optional<Url> url =  iUrlRepository.findByShortCode(shortcode);
-        UrlDTO urlDTO = new UrlDTO();
-        Optional<UrlDTO> optionalUrlDTO = Optional.of(urlDTO);
-
+        
         if (url.isPresent()) {
-            optionalUrlDTO.get().setId(url.get().getId());
-            optionalUrlDTO.get().setUrl(url.get().getUrl());
-            optionalUrlDTO.get().setShortCode(url.get().getShortCode());
-            optionalUrlDTO.get().setCreatedAt(url.get().getCreatedAt());
-            optionalUrlDTO.get().setUpdatedAt(url.get().getUpdatedAt());
-        } else {
-            return Optional.empty();
+            Url u = url.get();
+            return Optional.of(new UrlDTO(u.getId(), u.getUrl(), u.getShortCode(), u.getCreatedAt(), u.getUpdatedAt()));
         }
+        
+        return Optional.empty();
+    }
 
-        return optionalUrlDTO;
+    @Override
+    public Optional<UrlDTO> resolveShortCode(String shortcode) {
+        Optional<Url> urlOptional = iUrlRepository.findByShortCode(shortcode);
+        if (urlOptional.isPresent()) {
+            Url url = urlOptional.get();
+            // Incrementar contador de visitas
+            url.setAccessCount(url.getAccessCount() + 1);
+            iUrlRepository.save(url);
+            return Optional.of(new UrlDTO(url.getId(), url.getUrl(), url.getShortCode(), url.getCreatedAt(), url.getUpdatedAt()));
+        }
+        return Optional.empty();
     }
 
     @Override
     public Optional<UrlDTO> update(String shortcode, UrlDTO url) {
-
-        Optional<UrlDTO> urlFinded;
         Optional<Url> urlOriginal = iUrlRepository.findByShortCode(shortcode);
 
         if (urlOriginal.isPresent()) {
-            urlOriginal.get().setUrl(url.getUrl());
-            urlOriginal.get().setUpdatedAt(LocalDateTime.now());
-            this.save(urlOriginal.get());
+            Url existingUrl = urlOriginal.get();
+            existingUrl.setUrl(url.getUrl());
+            existingUrl.setUpdatedAt(LocalDateTime.now());
+            // Guardamos el objeto existente, NO creamos uno nuevo
+            iUrlRepository.save(existingUrl);
 
-            urlFinded = this.findByShortCode(shortcode);
-            if (urlFinded.isPresent()) {
-                urlFinded.get().setUrl(url.getUrl());
-                urlFinded.get().setUpdatedAt(LocalDateTime.now());
-                return urlFinded;
-            }
+            return this.findByShortCode(shortcode);
         }
 
         return Optional.empty();
@@ -102,20 +102,21 @@ public class UrlService implements IUrlService {
         return iUrlRepository.findStatsByShortCode(shortcode);
     }
 
-
-
     public String verifyCode (){
-        StringBuilder stringBuilder = new StringBuilder(5);
         Optional<UrlDTO> urlFinded;
+        String generatedCode;
 
         do {
+            // BUGFIX: El StringBuilder debe reiniciarse en cada iteracion
+            StringBuilder stringBuilder = new StringBuilder(5);
             for (int i = 0; i < 5; i++) {
                 int randomIndex = random.nextInt(characters.length());
                 stringBuilder.append(characters.charAt(randomIndex));
             }
-            urlFinded = this.findByShortCode(stringBuilder.toString());
+            generatedCode = stringBuilder.toString();
+            urlFinded = this.findByShortCode(generatedCode);
         } while (urlFinded.isPresent());
 
-        return stringBuilder.toString();
+        return generatedCode;
     }
 }

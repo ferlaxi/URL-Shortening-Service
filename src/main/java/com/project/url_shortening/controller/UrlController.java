@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +22,9 @@ public class UrlController {
     @PostMapping
     public ResponseEntity<UrlDTO> createUrl (@RequestBody Url url) {
         Optional<UrlDTO> newUrl = iUrlService.save(url);
-        return newUrl.map(urlDTO -> new ResponseEntity<>(urlDTO, HttpStatus.CREATED)).orElseGet(() -> new ResponseEntity<>(newUrl.get(), HttpStatus.BAD_REQUEST));
+        // BUGFIX: Si newUrl esta vacio, devolvemos un badRequest directo sin llamar a .get()
+        return newUrl.map(urlDTO -> new ResponseEntity<>(urlDTO, HttpStatus.CREATED))
+                .orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     @GetMapping
@@ -31,8 +34,21 @@ public class UrlController {
 
     @GetMapping("/{shortcode}")
     public ResponseEntity<UrlDTO> getShortCode (@PathVariable String shortcode) {
-        Optional<UrlDTO> urlFinded = iUrlService.findByShortCode(shortcode);
+        // BUGFIX: Usamos resolveShortCode para incrementar el accessCount
+        Optional<UrlDTO> urlFinded = iUrlService.resolveShortCode(shortcode);
         return urlFinded.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    
+    // EXTRA: Agregue un endpoint para redirigir, que es la funcion real de un acortador
+    @GetMapping("/{shortcode}/redirect")
+    public ResponseEntity<Void> redirectShortCode (@PathVariable String shortcode) {
+        Optional<UrlDTO> urlFinded = iUrlService.resolveShortCode(shortcode);
+        if (urlFinded.isPresent()) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(URI.create(urlFinded.get().getUrl()))
+                    .build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{shortcode}")

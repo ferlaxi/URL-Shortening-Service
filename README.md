@@ -1,148 +1,55 @@
-# 🔗 URL-Shortening Service
+# URL Shortening Service
 
-## Descripción del Proyecto
-Este proyecto es un acortador de URLs que genera automáticamente enlaces únicos de 5 caracteres aleatorios a partir de URLs largas. Su diseño asegura la creación rápida y eficiente de enlaces cortos que pueden compartirse fácilmente.
+![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=java&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.0-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Thymeleaf](https://img.shields.io/badge/Thymeleaf-3-005C0F?style=for-the-badge&logo=thymeleaf&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-## Tecnologías Utilizadas
+Servicio web diseñado para transformar URLs largas en enlaces cortos de fácil distribución. El sistema cuenta con redirección HTTP nativa, monitoreo de visitas (clicks) y una interfaz de usuario minimalista construida directamente sobre el servidor.
 
-![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
+## Arquitectura
 
-## Características Principales
+El proyecto sigue un patrón MVC clásico estructurado en capas:
+- **Controladores:** Manejan el tráfico web (Thymeleaf) y exponen una API REST.
+- **Servicios:** Contienen la lógica de validación y generación aleatoria de códigos.
+- **Repositorios:** Interfaz directa con MySQL mediante Spring Data JPA.
 
-- Utilización de arquitectura hexagonal.
-- Base de datos MySQL para almacenar las URLs.
-- Manejo de excepciones centralizado.
+## Configuración y Ejecución
 
-## 🗂️ Índice
+### Opción 1: Docker Compose (Recomendado)
+El proyecto incluye todo lo necesario para ejecutarse de manera automatizada.
 
-- [Descripción del Proyecto](#descripción-del-proyecto)
-- [Tecnologías Utilizadas](#-tecnologías-utilizadas)
-- [Características Principales](#-características-principales)
-- [Configuración del Entorno](#-configuración-del-entorno)
-- [Descripción de Entidades](#-descripción-de-entidades)
-    - [URL](#url)
-- [API REST](#api-rest)
-    - [Endpoints de URL](#-api-rest---endpoints-de-url)
-        - [Get All URLs](#get-all-urls)
-        - [Get URL by shortcode](#get-url-by-shortcode)
-        - [Get stats from URL by shortcode](#get-stats-by-shortcode)
-        - [Create a URL](#create-url)
-        - [Update a URL by shortcode](#update-url)
-        - [Delete a URL by shortcode](#delete-url)
+1. Abre tu terminal en el directorio del proyecto.
+2. Construye y despliega los contenedores:
+   ```bash
+   docker compose up -d --build
+   ```
+3. La aplicación y su base de datos estarán disponibles y conectadas. Ingresa a `http://localhost:8000/`.
 
-## ⚙️ Configuración del Entorno
+### Opción 2: Ejecución Manual
+Si deseas correrlo desde tu IDE o terminal local:
+1. Asegúrate de tener MySQL ejecutándose localmente en el puerto `3306`.
+2. Crea una base de datos llamada `url_db`.
+3. Compila el proyecto y córrelo:
+   ```bash
+   ./mvnw clean package -DskipTests
+   ./mvnw spring-boot:run
+   ```
+*(La configuración local usará credenciales por defecto: host `localhost`, usuario `root` y contraseña `root`).*
 
-1. Clona el repositorio.
-2. Abre el proyecto en tu IDE.
-3. Configura la conexión a la base de datos MySQL en `application.properties`
-````properties
-spring.datasource.url=jdbc:mysql://localhost:3306/url_db?useSSL=false&serverTimezone=UTC
-````
-4. Ejecuta la aplicación
+## API REST 
 
-## Descripción de Entidades
+Además de la interfaz gráfica, el servicio expone una API para consumir programáticamente:
 
-### URL
-Descripción: Representa una URL acortada en el sistema.
+| Método | Endpoint                        | Uso principal                                      |
+|--------|---------------------------------|----------------------------------------------------|
+| GET    | `/api/shorten`                  | Lista todas las URLs almacenadas.                  |
+| POST   | `/api/shorten`                  | Acorta una nueva URL.                              |
+| GET    | `/api/shorten/{shortcode}`      | Obtiene los detalles de un código corto.           |
+| PUT    | `/api/shorten/{shortcode}`      | Modifica la URL original vinculada a un código.    |
+| DELETE | `/api/shorten/{shortcode}`      | Borra el registro permanentemente.                 |
 
-Atributos:
-
-`id`: Long (ID único)
-`url`: String (URL original)
-`shortCode`: String (Código corto para cada url)
-`createdAt`: LocalDateTime (Fecha de creación)
-`updatedAt`: LocalDateTime (Fecha de actualización)
-`accessCount`: Integer (Conteo de visitas a la URL)
-
-## API REST
-
-### 🌐 API REST - Endpoints de URL
-
-| Método | Endpoint                          | Descripción                                  | Enlace Rápido               |
-|--------|-----------------------------------|----------------------------------------------|-----------------------------|
-| GET    | `api/shorten`                     | Obtiene todas las URLs.                      | [Get All URLs](#get-all-urls)|
-| GET    | `api/shorten/{shortcode}`         | Obtiene una URL por Shortcode.               | [Get URL by shortcode](#get-url-by-shortcode) |
-| GET    | `api/shorten/{shortcode}/stats`   | Obtiene las stats de una URL con su contador.| [Get stats from URL](#get-stats-from-url) |
-| POST   | `api/shorten`                     | Crea una nueva URL.                          | [Create URL](#create-url)    |
-| PUT    | `api/shorten/{shortcode}`         | Actualiza una URL existente.                 | [Update URL](#update-url)    |
-| DELETE | `api/shorten/{shortcode}`         | Elimina una URL por su shortcode.            | [Delete URL](#delete-url)    |
-
-### Get All URLs
-**Endpoint:** `GET api/shorten`
-
-**Descripción:** Recupera todas las URLs registradas en la base de datos.
-
-**Respuesta:**
-- `200 OK`: La lista de URLs se ha recuperado con éxito.
-
-### Get URL by shortcode
-**Endpoint:** `GET api/shorten/{shortcode}`
-
-**Descripción:** Recupera una URL utilizando su shortcode..
-
-**Parámetros:**
-- `shortcode`: String (carácteres representativos de la URL)
-
-**Respuesta:**
-- `200 OK`: La URL se ha recuperado correctamente.  
-- `404 Not Found`: No se encontró la URL solicitada.
-
-### Get stats from URL by shortcode
-**Endpoint:** `GET api/shorten/{shortcode}/stats`
-
-**Descripción:** Recupera información sobre el conteo de visitas de la URL
-
-**Parámetros:**
-- `shortcode`: String (carácteres representativos de la URL)
-
-**Respuesta:**
-- `200 OK`: La URL se ha recuperado correctamente.  
-- `404 Not Found`: No se encontró la URL solicitada.
-
-### Create URL
-**Endpoint:** `POST api/shorten`
-
-**Descripción:** Crea una nueva URL mediante un RequestBody.
-
-**Respuesta:**
-- `201 Created`: La URL se ha creado con éxito.
-- `400 Bad Request`: shortcode ya existente o los datos de entrada son inválidos.
-
-**Cuerpo de la solicitud**
-```json
-{
-    "url": "String"
-}
-```
-### Update URL
-**Endpoint:** `PUT /api/shorten/{shortcode}`
-
-**Descripción:** Modifica una URL previamente registrada.
-
-**Parámetros:**
-- `shortcode`: String (shortcode de la URL a actualizar)
-- `url`: urlEdited (Cuerpo de la solicitud que contiene los nuevos datos para actualizar la URL.)
-
-**Respuesta:**
-- `200 OK`: URL actualizada exitosamente.
-- `400 Bad Request`: Los datos de entrada son inválidos.
-
-**Cuerpo de la solicitud**
-```json
-{
-  "url": "String"
-}
-```
-### Delete URL
-**Endpoint:** `DELETE /api/shorten/{shortcode}`
-
-**Descripción:** Elimina una URL por su shortcode.
-
-**Parámetros:**
-- `shortcode`: String (shortcode de la URL)
-
-**Respuesta:**
-- `204 No Content`: URL eliminada exitosamente.
-- `400 Bad Request`: URL no pudo ser eliminada.
+**Nota sobre la redirección:**
+El punto final de redirección se encuentra expuesto en la ruta base `GET /{shortcode}`. Consumir este endpoint en el navegador sumará +1 al contador de visitas del registro y ejecutará un `HTTP 302` hacia el destino original.
